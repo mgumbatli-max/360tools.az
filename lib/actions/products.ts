@@ -12,9 +12,9 @@ import {
   teamMembers,
 } from "@/lib/db/schema";
 import { generatePlatformContent, qualityCheck } from "@/lib/ai/generate";
+import { getPlatform, getPlatforms } from "@/lib/platforms";
 import {
   PLATFORM_KEYS,
-  type PlatformKey,
   type ToneKey,
   type LanguageKey,
 } from "@/lib/constants";
@@ -193,9 +193,12 @@ export async function toggleArchive(
 export async function generateContents(
   input: GenerateContentsInput
 ): Promise<{ created: number; error?: string }> {
-  const validPlatforms = input.platforms.filter((p): p is PlatformKey =>
-    (PLATFORM_KEYS as readonly string[]).includes(p)
-  );
+  // Etibarlı açarlar: DB platformaları + daxili konstant açarlar (custom platformalar da işləsin)
+  const knownKeys = new Set<string>([
+    ...getPlatforms().map((p) => p.key),
+    ...(PLATFORM_KEYS as readonly string[]),
+  ]);
+  const validPlatforms = input.platforms.filter((p) => knownKeys.has(p));
   if (validPlatforms.length === 0) {
     return { created: 0, error: "Ən azı bir platforma seçin" };
   }
@@ -216,14 +219,16 @@ export async function generateContents(
 
   for (const platform of validPlatforms) {
     try {
+      const profile = getPlatform(platform) ?? null;
       const generated = await generatePlatformContent({
         product,
         brand,
         platform,
+        profile,
         language: input.language,
         tone: input.tone,
       });
-      const quality = qualityCheck(generated, product, platform);
+      const quality = qualityCheck(generated, product, platform, profile);
       const now = nowIso();
 
       db.insert(contents)

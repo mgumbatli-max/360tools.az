@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { products, contents } from "@/lib/db/schema";
 import { formatDate, formatPrice, LANGUAGES, type LanguageKey } from "@/lib/constants";
 import { aiAvailable } from "@/lib/ai/generate";
+import { getPlatformOptions } from "@/lib/platforms";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -234,7 +235,11 @@ export default async function ProductDetailPage({
         </Card>
 
         <div>
-          <GeneratePanel productId={product.id} aiOn={aiAvailable()} />
+          <GeneratePanel
+            productId={product.id}
+            aiOn={aiAvailable()}
+            platforms={getPlatformOptions()}
+          />
         </div>
       </div>
 

@@ -5,14 +5,13 @@ import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
 import {
   LANGUAGES,
-  PLATFORMS,
-  PLATFORM_KEYS,
+  PLATFORM_GROUPS,
   TONES,
   type LanguageKey,
-  type PlatformKey,
   type ToneKey,
 } from "@/lib/constants";
 import { generateContents } from "@/lib/actions/products";
+import type { PlatformOption } from "@/lib/platforms";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,42 +39,35 @@ const LANGUAGE_ITEMS: Record<string, string> = Object.fromEntries(
   Object.entries(LANGUAGES).map(([key, meta]) => [key, meta.label])
 );
 
-const GROUP_LABELS: Record<string, string> = {
-  marketplace: "Marketplace",
-  social: "Sosial media",
-  messaging: "Mesajlaşma",
-  web: "Veb / SEO",
-};
-
-const GROUP_ORDER = ["marketplace", "social", "messaging", "web"] as const;
-
-const GROUPED_PLATFORMS = GROUP_ORDER.map((group) => ({
-  group,
-  label: GROUP_LABELS[group],
-  keys: PLATFORM_KEYS.filter((key) => PLATFORMS[key].group === group),
-})).filter((g) => g.keys.length > 0);
+const GROUP_ORDER = ["marketplace", "social", "messaging", "web", "custom"] as const;
 
 interface GeneratePanelProps {
   productId: number;
   aiOn: boolean;
+  platforms: PlatformOption[];
 }
 
-export function GeneratePanel({ productId, aiOn }: GeneratePanelProps) {
-  const [selected, setSelected] = useState<PlatformKey[]>([]);
+export function GeneratePanel({ productId, aiOn, platforms }: GeneratePanelProps) {
+  const [selected, setSelected] = useState<string[]>([]);
   const [language, setLanguage] = useState<LanguageKey>("az");
   const [tone, setTone] = useState<ToneKey>("standart");
   const [isPending, startTransition] = useTransition();
 
-  function togglePlatform(key: PlatformKey, checked: boolean) {
+  const allKeys = platforms.map((p) => p.key);
+  const grouped = GROUP_ORDER.map((group) => ({
+    group,
+    label: PLATFORM_GROUPS[group]?.label ?? group,
+    items: platforms.filter((p) => p.grp === group),
+  })).filter((g) => g.items.length > 0);
+
+  function togglePlatform(key: string, checked: boolean) {
     setSelected((prev) =>
       checked ? [...prev, key] : prev.filter((k) => k !== key)
     );
   }
 
   function toggleAll() {
-    setSelected((prev) =>
-      prev.length === PLATFORM_KEYS.length ? [] : [...PLATFORM_KEYS]
-    );
+    setSelected((prev) => (prev.length === allKeys.length ? [] : [...allKeys]));
   }
 
   function handleGenerate() {
@@ -124,32 +116,30 @@ export function GeneratePanel({ productId, aiOn }: GeneratePanelProps) {
             Platformalar
           </span>
           <Button type="button" variant="ghost" size="xs" onClick={toggleAll}>
-            {selected.length === PLATFORM_KEYS.length
-              ? "Seçimi təmizlə"
-              : "Hamısını seç"}
+            {selected.length === allKeys.length ? "Seçimi təmizlə" : "Hamısını seç"}
           </Button>
         </div>
 
         <div className="space-y-3">
-          {GROUPED_PLATFORMS.map(({ group, label, keys }) => (
+          {grouped.map(({ group, label, items }) => (
             <div key={group}>
               <div className="mb-1.5 text-xs font-medium tracking-wide text-zinc-400 uppercase">
                 {label}
               </div>
               <div className="space-y-1">
-                {keys.map((key) => (
+                {items.map((item) => (
                   <label
-                    key={key}
+                    key={item.key}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
                   >
                     <Checkbox
-                      checked={selected.includes(key)}
+                      checked={selected.includes(item.key)}
                       onCheckedChange={(checked) =>
-                        togglePlatform(key, checked === true)
+                        togglePlatform(item.key, checked === true)
                       }
                     />
-                    <span aria-hidden>{PLATFORMS[key].icon}</span>
-                    {PLATFORMS[key].label}
+                    <span aria-hidden>{item.icon}</span>
+                    {item.label}
                   </label>
                 ))}
               </div>
