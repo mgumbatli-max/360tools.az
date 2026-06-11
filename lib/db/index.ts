@@ -161,8 +161,13 @@ function createDb(): DrizzleDb {
   sqlite.pragma("journal_mode = WAL");
   sqlite.exec(BOOTSTRAP_SQL);
   const db = drizzle(sqlite, { schema });
-  runSeed(db);
-  seedPlatforms(db); // additiv — mövcud DB fayllarında da boşdursa doldurur
+  // Seed-i exclusive transaction-da işlət — bir neçə proses eyni faylı seed etsə belə
+  // ikiqat data yaranmasın (SQLite yazıları seriallaşdırır).
+  const seedAll = sqlite.transaction(() => {
+    runSeed(db);
+    seedPlatforms(db);
+  });
+  seedAll.exclusive();
   return db;
 }
 

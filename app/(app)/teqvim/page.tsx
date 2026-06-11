@@ -27,7 +27,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
 import { PlatformBadge } from "@/components/shared/platform-badge";
 import { NewEntryDialog } from "@/components/calendar/new-entry-dialog";
+import { GeneratePlanDialog } from "@/components/calendar/generate-plan-dialog";
 import { EntryChip } from "@/components/calendar/entry-chip";
+import { getPlatformOptions } from "@/lib/platforms";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +94,12 @@ export default async function CalendarPage({
       <PageHeader
         title="Kontent təqvimi"
         description="Paylaşımları planla, izlə və vaxtında yerləşdir"
+        icon={<CalendarDays className="size-5" />}
       >
+        <GeneratePlanDialog
+          defaultDate={isCurrentMonth ? format(addDays(now, 1), "yyyy-MM-dd") : `${monthParam}-01`}
+          platforms={getPlatformOptions()}
+        />
         <NewEntryDialog defaultDate={isCurrentMonth ? todayStr : `${monthParam}-01`} />
       </PageHeader>
 

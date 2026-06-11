@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { desc, count } from "drizzle-orm";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, Upload, Layers } from "lucide-react";
 import { db } from "@/lib/db";
 import { products, contents } from "@/lib/db/schema";
 import { formatDate, formatPrice } from "@/lib/constants";
@@ -81,7 +81,16 @@ export default async function ProductsPage({
       <PageHeader
         title="Məhsullar"
         description="Məhsul kataloqu — kontent yaratmaq üçün əsas mənbə"
+        icon={<Package className="size-5" />}
       >
+        <Button variant="outline" render={<Link href="/mehsullar/import" />}>
+          <Upload />
+          CSV idxal
+        </Button>
+        <Button variant="outline" render={<Link href="/mehsullar/toplu" />}>
+          <Layers />
+          Toplu generasiya
+        </Button>
         <Button render={<Link href="/mehsullar/yeni" />}>
           <Plus />
           Yeni məhsul
