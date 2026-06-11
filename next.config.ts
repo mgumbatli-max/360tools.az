@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // uploadImage action-ı 8 MB-a qədər fayl qəbul edir (lib/actions/images.ts)
+      bodySizeLimit: "8mb",
+    },
+  },
 };
 
 export default nextConfig;

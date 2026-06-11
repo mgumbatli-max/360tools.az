@@ -25,7 +25,7 @@ const NAV_GROUPS: {
   {
     label: "Əsas",
     items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/", label: "İdarə paneli", icon: LayoutDashboard },
       { href: "/mehsullar", label: "Məhsullar", icon: Package },
       { href: "/ai-studio", label: "AI Studio", icon: Sparkles },
       { href: "/elanlar", label: "Elanlar", icon: Megaphone },
@@ -36,7 +36,7 @@ const NAV_GROUPS: {
     label: "Planlama",
     items: [
       { href: "/sablonlar", label: "Şablonlar", icon: LayoutTemplate },
-      { href: "/teqvim", label: "Kontent Calendar", icon: CalendarDays },
+      { href: "/teqvim", label: "Kontent təqvimi", icon: CalendarDays },
       { href: "/kampaniyalar", label: "Kampaniyalar", icon: Rocket },
     ],
   },

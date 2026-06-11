@@ -113,6 +113,15 @@ export const LANGUAGES = {
 
 export type LanguageKey = keyof typeof LANGUAGES;
 
+export const TONES = {
+  standart: { label: "Standart" },
+  premium: { label: "Premium" },
+  genc: { label: "Gənc auditoriya" },
+} as const;
+
+export type ToneKey = keyof typeof TONES;
+export const TONE_KEYS = Object.keys(TONES) as ToneKey[];
+
 export const IMAGE_FORMATS = {
   "1:1": { label: "Kvadrat (1:1)", width: 1080, height: 1080, usage: "Instagram post, marketplace" },
   "4:5": { label: "Portret (4:5)", width: 1080, height: 1350, usage: "Instagram post" },
