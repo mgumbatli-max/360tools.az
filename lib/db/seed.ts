@@ -16,6 +16,110 @@ function day(daysFromNow = 0): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Built-in platforma profilləri — hər platformanın öz qaydaları ilə seed olunur.
+// runSeed-dən ayrıdır ki, mövcud DB fayllarına da additiv əlavə oluna bilsin.
+export function seedPlatforms(db: Db): void {
+  const existing = db.select().from(schema.platforms).limit(1).all();
+  if (existing.length > 0) return;
+
+  const now = iso(0);
+  const j = JSON.stringify;
+  const FULL = j(["opener", "specs", "price", "warranty", "delivery", "cta"]);
+
+  db.insert(schema.platforms)
+    .values([
+      {
+        key: "tap-az", label: "Tap.az", icon: "🏷️", grp: "marketplace", isBuiltIn: 1, sortOrder: 10,
+        toneDefault: "standart", emojiLevel: "light",
+        titleMaxLen: 70, bodyMinLen: 80, bodyMaxLen: 4000, hashtagMin: 0, hashtagMax: 5,
+        structure: FULL,
+        ctaText: "Ətraflı məlumat üçün WhatsApp-a yazın!",
+        imageFormats: j(["1:1", "16:9"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "instagram-post", label: "Instagram Post", icon: "📸", grp: "social", isBuiltIn: 1, sortOrder: 20,
+        toneDefault: "standart", emojiLevel: "rich",
+        titleMaxLen: 80, bodyMinLen: 60, bodyMaxLen: 2200, hashtagMin: 5, hashtagMax: 15,
+        structure: FULL,
+        ctaText: "Sifariş üçün DM və ya WhatsApp! 📲",
+        imageFormats: j(["1:1", "4:5"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "instagram-story", label: "Instagram Story", icon: "📱", grp: "social", isBuiltIn: 1, sortOrder: 30,
+        toneDefault: "genc", emojiLevel: "rich",
+        titleMaxLen: 60, bodyMinLen: 20, bodyMaxLen: 300, hashtagMin: 0, hashtagMax: 3,
+        structure: j(["opener", "price", "cta"]),
+        ctaText: "Yuxarı sürüşdür və sifariş et! ⬆️",
+        imageFormats: j(["9:16"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "instagram-reels", label: "Instagram Reels", icon: "🎬", grp: "social", isBuiltIn: 1, sortOrder: 40,
+        toneDefault: "genc", emojiLevel: "rich",
+        titleMaxLen: 80, bodyMinLen: 40, bodyMaxLen: 1000, hashtagMin: 5, hashtagMax: 10,
+        structure: j(["opener", "specs", "price", "cta"]),
+        ctaText: "Ətraflı üçün profilə keç! 📲",
+        imageFormats: j(["9:16"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "birmarket", label: "Birmarket", icon: "🛒", grp: "marketplace", isBuiltIn: 1, sortOrder: 50,
+        toneDefault: "resmi", emojiLevel: "none",
+        titleMaxLen: 120, bodyMinLen: 80, bodyMaxLen: 3000, hashtagMin: 0, hashtagMax: 0,
+        structure: j(["specs", "warranty", "delivery"]),
+        extraInstructions: "Marketplace standartı: ad 'Marka Model Rəng' formatında, mətn faktiki və neytral, reklam şüarları olmasın.",
+        imageFormats: j(["1:1"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "umico", label: "Umico", icon: "🛍️", grp: "marketplace", isBuiltIn: 1, sortOrder: 60,
+        toneDefault: "resmi", emojiLevel: "none",
+        titleMaxLen: 120, bodyMinLen: 80, bodyMaxLen: 3000, hashtagMin: 0, hashtagMax: 0,
+        structure: j(["specs", "warranty", "delivery"]),
+        extraInstructions: "Marketplace standartı: ad 'Marka Model Rəng' formatında, mətn faktiki və neytral, reklam şüarları olmasın.",
+        imageFormats: j(["1:1"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "website", label: "Sayt (SEO)", icon: "🌐", grp: "web", isBuiltIn: 1, sortOrder: 70,
+        toneDefault: "resmi", emojiLevel: "none",
+        titleMaxLen: 60, bodyMinLen: 120, bodyMaxLen: 5000, hashtagMin: 0, hashtagMax: 0,
+        structure: j(["opener", "specs", "warranty", "cta"]),
+        extraInstructions: "SEO yönümlü: başlıq açar sözlə başlasın, mətn axtarış sistemləri üçün təbii oxunsun.",
+        imageFormats: j(["16:9", "1:1"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "whatsapp", label: "WhatsApp Kataloq", icon: "💬", grp: "messaging", isBuiltIn: 1, sortOrder: 80,
+        toneDefault: "standart", emojiLevel: "light",
+        titleMaxLen: 80, bodyMinLen: 40, bodyMaxLen: 1000, hashtagMin: 0, hashtagMax: 0,
+        structure: j(["opener", "price", "warranty", "delivery", "cta"]),
+        ctaText: "Sifariş etmək istəyirsinizsə, bu mesaja cavab yazın.",
+        imageFormats: j(["1:1"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "telegram", label: "Telegram Post", icon: "✈️", grp: "messaging", isBuiltIn: 1, sortOrder: 90,
+        toneDefault: "standart", emojiLevel: "light",
+        titleMaxLen: 90, bodyMinLen: 60, bodyMaxLen: 3500, hashtagMin: 0, hashtagMax: 5,
+        structure: FULL,
+        imageFormats: j(["1:1", "16:9"]),
+        createdAt: now, updatedAt: now,
+      },
+      {
+        key: "facebook-marketplace", label: "Facebook Marketplace", icon: "👥", grp: "marketplace", isBuiltIn: 1, sortOrder: 100,
+        toneDefault: "standart", emojiLevel: "light",
+        titleMaxLen: 100, bodyMinLen: 60, bodyMaxLen: 5000, hashtagMin: 0, hashtagMax: 5,
+        structure: FULL,
+        imageFormats: j(["1:1", "16:9"]),
+        createdAt: now, updatedAt: now,
+      },
+    ])
+    .run();
+}
+
 export function runSeed(db: Db): void {
   const existing = db.select().from(schema.teamMembers).limit(1).all();
   if (existing.length > 0) return;

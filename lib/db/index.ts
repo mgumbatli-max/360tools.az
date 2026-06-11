@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 import * as schema from "./schema";
-import { runSeed } from "./seed";
+import { runSeed, seedPlatforms } from "./seed";
 
 const DB_PATH = path.join(process.cwd(), "data", "360tools.db");
 
@@ -113,6 +113,34 @@ CREATE TABLE IF NOT EXISTS campaigns (
   ideas TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS platforms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  icon TEXT DEFAULT '📌',
+  grp TEXT NOT NULL DEFAULT 'custom',
+  is_built_in INTEGER NOT NULL DEFAULT 0,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 100,
+  tone_default TEXT NOT NULL DEFAULT 'standart',
+  emoji_level TEXT NOT NULL DEFAULT 'light',
+  title_max_len INTEGER NOT NULL DEFAULT 90,
+  body_min_len INTEGER NOT NULL DEFAULT 60,
+  body_max_len INTEGER NOT NULL DEFAULT 2200,
+  hashtag_min INTEGER NOT NULL DEFAULT 0,
+  hashtag_max INTEGER NOT NULL DEFAULT 10,
+  structure TEXT,
+  cta_text TEXT,
+  contact_format TEXT,
+  forbidden_words TEXT,
+  preferred_phrases TEXT,
+  extra_instructions TEXT,
+  examples TEXT,
+  image_formats TEXT,
+  default_language TEXT NOT NULL DEFAULT 'az',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   member_id INTEGER,
@@ -134,6 +162,7 @@ function createDb(): DrizzleDb {
   sqlite.exec(BOOTSTRAP_SQL);
   const db = drizzle(sqlite, { schema });
   runSeed(db);
+  seedPlatforms(db); // additiv — mövcud DB fayllarında da boşdursa doldurur
   return db;
 }
 

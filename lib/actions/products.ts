@@ -15,6 +15,7 @@ import { generatePlatformContent, qualityCheck } from "@/lib/ai/generate";
 import {
   PLATFORM_KEYS,
   type PlatformKey,
+  type ToneKey,
   type LanguageKey,
 } from "@/lib/constants";
 
@@ -44,7 +45,7 @@ export interface GenerateContentsInput {
   productId: number;
   platforms: string[];
   language: LanguageKey;
-  tone: "standart" | "premium" | "genc";
+  tone: ToneKey;
 }
 
 function nowIso(): string {

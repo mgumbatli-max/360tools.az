@@ -122,6 +122,37 @@ export const campaigns = sqliteTable("campaigns", {
   createdAt: text("created_at").notNull(),
 });
 
+// Platforma profilləri — istifadəçi öz platformasını əlavə edib sistemi ona "öyrədə" bilir.
+// Built-in platformalar seed olunur; bütün generasiya qaydaları buradan oxunur.
+export const platforms = sqliteTable("platforms", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  key: text("key").notNull().unique(),
+  label: text("label").notNull(),
+  icon: text("icon").default("📌"),
+  grp: text("grp").notNull().default("custom"), // PlatformGroupKey
+  isBuiltIn: integer("is_built_in").notNull().default(0),
+  enabled: integer("enabled").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(100),
+  toneDefault: text("tone_default").notNull().default("standart"), // ToneKey
+  emojiLevel: text("emoji_level").notNull().default("light"), // EmojiLevelKey
+  titleMaxLen: integer("title_max_len").notNull().default(90),
+  bodyMinLen: integer("body_min_len").notNull().default(60),
+  bodyMaxLen: integer("body_max_len").notNull().default(2200),
+  hashtagMin: integer("hashtag_min").notNull().default(0),
+  hashtagMax: integer("hashtag_max").notNull().default(10),
+  structure: text("structure"), // JSON: StructureBlockKey[] — blokların sırası
+  ctaText: text("cta_text"),
+  contactFormat: text("contact_format"),
+  forbiddenWords: text("forbidden_words"), // JSON: string[]
+  preferredPhrases: text("preferred_phrases"), // JSON: string[]
+  extraInstructions: text("extra_instructions"), // platformanın sərbəst "sistem promptu"
+  examples: text("examples"), // JSON: string[] — istifadəçinin nümunə postları (few-shot)
+  imageFormats: text("image_formats"), // JSON: ImageFormatKey[]
+  defaultLanguage: text("default_language").notNull().default("az"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // Fəaliyyət jurnalı
 export const activities = sqliteTable("activities", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -142,3 +173,5 @@ export type Task = typeof tasks.$inferSelect;
 export type CalendarEntry = typeof calendarEntries.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
+export type Platform = typeof platforms.$inferSelect;
+export type NewPlatform = typeof platforms.$inferInsert;

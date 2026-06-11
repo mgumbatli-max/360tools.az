@@ -1,6 +1,13 @@
 import { generateText } from "ai";
-import type { Product, BrandKit } from "@/lib/db/schema";
-import { PLATFORMS, type PlatformKey, type LanguageKey, formatPrice } from "@/lib/constants";
+import type { Product, BrandKit, Platform } from "@/lib/db/schema";
+import {
+  PLATFORMS,
+  type PlatformKey,
+  type LanguageKey,
+  type StructureBlockKey,
+  DEFAULT_STRUCTURE,
+  formatPrice,
+} from "@/lib/constants";
 
 // AI Gateway açarı varsa real model, yoxdursa deterministik şablon generatoru işləyir.
 export const AI_MODEL = "anthropic/claude-sonnet-4-6";
@@ -19,18 +26,34 @@ export interface GeneratedContent {
 export interface GenerateOptions {
   product: Product;
   brand?: BrandKit | null;
-  platform: PlatformKey;
+  /** Platforma açarı — built-in və ya istifadəçinin yaratdığı custom platforma. */
+  platform: string;
+  /** Platforma profili (DB-dən) — qaydalar, nümunələr, limitlər buradan tətbiq olunur. */
+  profile?: Platform | null;
   language?: LanguageKey;
-  tone?: "standart" | "premium" | "genc";
+  tone?: "standart" | "premium" | "genc" | "resmi";
   extraInstructions?: string;
 }
 
-function parseSpecs(product: Product): { name: string; value: string }[] {
+function safeParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json) return fallback;
   try {
-    return product.specs ? JSON.parse(product.specs) : [];
+    return JSON.parse(json) as T;
   } catch {
-    return [];
+    return fallback;
   }
+}
+
+function parseSpecs(product: Product): { name: string; value: string }[] {
+  return safeParse(product.specs, []);
+}
+
+function platformLabel(opts: GenerateOptions): string {
+  return (
+    opts.profile?.label ??
+    (PLATFORMS as Record<string, { label: string }>)[opts.platform]?.label ??
+    opts.platform
+  );
 }
 
 function slugWords(product: Product): string[] {
@@ -49,10 +72,95 @@ function priceLine(product: Product, lang: LanguageKey): string {
   return `${labels[lang]}: ${formatPrice(product.salePrice ?? product.price)}`;
 }
 
+// ---------- Profil tətbiqi ----------
+
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2190}-\u{21FF}\u{2B05}-\u{2B07}]/gu;
+
+function stripEmojis(s: string): string {
+  return s
+    .replace(EMOJI_RE, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +\n/g, "\n")
+    .trim();
+}
+
+/** Profil limitlərini hazır kontentə tətbiq edir (AI və fallback nəticələrinin hər ikisinə). */
+function applyProfile(c: GeneratedContent, profile: Platform): GeneratedContent {
+  let title = c.title;
+  let body = c.body;
+  let hashtags = [...c.hashtags];
+
+  if (profile.emojiLevel === "none") {
+    title = stripEmojis(title);
+    body = stripEmojis(body);
+  }
+  if (profile.titleMaxLen > 0 && title.length > profile.titleMaxLen) {
+    title = title.slice(0, Math.max(1, profile.titleMaxLen - 1)).trimEnd() + "…";
+  }
+  if (profile.hashtagMax >= 0 && hashtags.length > profile.hashtagMax) {
+    hashtags = hashtags.slice(0, profile.hashtagMax);
+  }
+  if (profile.bodyMaxLen > 0 && body.length > profile.bodyMaxLen) {
+    body = body.slice(0, profile.bodyMaxLen).trimEnd();
+  }
+  return { ...c, title, body, hashtags };
+}
+
 // ---------- Deterministik fallback generator ----------
 
 function fallbackGenerate(opts: GenerateOptions): GeneratedContent {
-  const { product, brand, platform } = opts;
+  const base = builtinFallback(opts) ?? genericFallback(opts);
+  return opts.profile ? applyProfile(base, opts.profile) : base;
+}
+
+/** Custom platformalar üçün profil strukturu əsasında generic qurucu. */
+function genericFallback(opts: GenerateOptions): GeneratedContent {
+  const { product, brand, profile } = opts;
+  const lang: LanguageKey = opts.language ?? (profile?.defaultLanguage as LanguageKey) ?? "az";
+  const specs = parseSpecs(product);
+  const emoji = profile?.emojiLevel ?? "light";
+  const structure = safeParse<StructureBlockKey[]>(profile?.structure, DEFAULT_STRUCTURE);
+  const warranty = product.warranty ?? brand?.warrantyPolicy ?? "";
+  const delivery = product.delivery ?? brand?.deliveryPolicy ?? "";
+  const preferred = safeParse<string[]>(profile?.preferredPhrases, []);
+  const cta =
+    profile?.ctaText ??
+    profile?.contactFormat ??
+    (brand?.phone ? `Sifariş üçün əlaqə: ${brand.phone}` : "Sifariş üçün bizimlə əlaqə saxlayın.");
+
+  const blocks: Record<StructureBlockKey, string> = {
+    opener:
+      emoji === "rich"
+        ? `${product.name} artıq bizdə! ✨`
+        : `${product.name}${product.color ? `, ${product.color}` : ""} — yeni təklif.`,
+    specs: specs.length ? specs.map((s) => `• ${s.name}: ${s.value}`).join("\n") : "",
+    price: priceLine(product, lang),
+    warranty: warranty ? (emoji === "none" ? `Zəmanət: ${warranty}` : `🛡 ${warranty}`) : "",
+    delivery: delivery ? (emoji === "none" ? `Çatdırılma: ${delivery}` : `🚚 ${delivery}`) : "",
+    cta,
+  };
+
+  const body = [
+    ...structure.map((k) => blocks[k] ?? ""),
+    ...(preferred.length ? [preferred[0]] : []),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const hashtags = (profile?.hashtagMax ?? 10) > 0 ? slugWords(product) : [];
+  const seoKeywords = [
+    product.name.toLowerCase(),
+    [product.brand, product.model].filter(Boolean).join(" ").toLowerCase(),
+    `${product.category.toLowerCase()} baku`,
+  ].filter((k) => k.trim().length > 2);
+
+  return { title: product.name, body, hashtags, seoKeywords };
+}
+
+/** Built-in platformalar üçün əl ilə hazırlanmış şablonlar; custom açarlar üçün null. */
+function builtinFallback(opts: GenerateOptions): GeneratedContent | null {
+  const { product, brand } = opts;
+  const platform = opts.platform as PlatformKey;
   const lang: LanguageKey = opts.language ?? "az";
   const specs = parseSpecs(product);
   const specLines = specs.map((s) => `• ${s.name}: ${s.value}`).join("\n");
@@ -225,6 +333,8 @@ function fallbackGenerate(opts: GenerateOptions): GeneratedContent {
         .join("\n");
       return { title: product.name, body, hashtags, seoKeywords };
     }
+    default:
+      return null;
   }
 }
 
@@ -236,13 +346,48 @@ const LANG_NAMES: Record<LanguageKey, string> = {
   en: "ingilis dilində",
 };
 
+const EMOJI_INSTRUCTIONS = {
+  none: "Emoji istifadə ETMƏ.",
+  light: "Az miqdarda, yerində emoji istifadə et.",
+  rich: "Canlı, bol emojili üslub istifadə et.",
+} as const;
+
+function buildProfileRules(profile: Platform): string {
+  const forbidden = safeParse<string[]>(profile.forbiddenWords, []);
+  const preferred = safeParse<string[]>(profile.preferredPhrases, []);
+  const lines = [
+    `- Başlıq maksimum ${profile.titleMaxLen} simvol olsun`,
+    `- Mətn ${profile.bodyMinLen}–${profile.bodyMaxLen} simvol aralığında olsun`,
+    profile.hashtagMax === 0
+      ? "- Hashtag YAZMA"
+      : `- Hashtag sayı ${profile.hashtagMin}–${profile.hashtagMax} olsun`,
+    `- ${EMOJI_INSTRUCTIONS[(profile.emojiLevel as keyof typeof EMOJI_INSTRUCTIONS)] ?? EMOJI_INSTRUCTIONS.light}`,
+    `- Ton: ${profile.toneDefault}`,
+    profile.ctaText ? `- Çağırış (CTA) mətni: "${profile.ctaText}"` : null,
+    profile.contactFormat ? `- Əlaqə formatı: ${profile.contactFormat}` : null,
+    forbidden.length ? `- Bu sözləri İŞLƏTMƏ: ${forbidden.join(", ")}` : null,
+    preferred.length ? `- Bu ifadələrə üstünlük ver: ${preferred.join(", ")}` : null,
+    profile.extraInstructions ? `- Əlavə qayda: ${profile.extraInstructions}` : null,
+  ].filter((l): l is string => l !== null);
+  return `\nPlatforma qaydaları (MÜTLƏQ riayət et):\n${lines.join("\n")}`;
+}
+
+function buildExamplesBlock(profile: Platform): string {
+  const examples = safeParse<string[]>(profile.examples, []).filter((e) => e.trim().length > 0);
+  if (!examples.length) return "";
+  return `\nBu platformada bəyənilən nümunə postlar (ÜSLUBUNU təqlid et, məzmununu KÖÇÜRMƏ):\n${examples
+    .map((e, i) => `--- Nümunə ${i + 1} ---\n${e.trim()}`)
+    .join("\n")}\n--- Nümunələrin sonu ---`;
+}
+
 async function aiGenerate(opts: GenerateOptions): Promise<GeneratedContent> {
-  const { product, brand, platform } = opts;
-  const lang = opts.language ?? "az";
+  const { product, brand, profile } = opts;
+  const lang: LanguageKey = opts.language ?? (profile?.defaultLanguage as LanguageKey) ?? "az";
   const specs = parseSpecs(product);
+  const tone = opts.tone ?? profile?.toneDefault;
 
   const prompt = `Sən Azərbaycan bazarı üçün professional satış kontenti yazan köməkçisən.
-Aşağıdakı məhsul üçün "${PLATFORMS[platform].label}" platformasına uyğun, ${LANG_NAMES[lang]} satış kontenti hazırla.
+Aşağıdakı məhsul üçün "${platformLabel(opts)}" platformasına uyğun, ${LANG_NAMES[lang]} satış kontenti hazırla.
 
 Məhsul:
 - Ad: ${product.name}
@@ -254,12 +399,14 @@ Məhsul:
 - Çatdırılma: ${product.delivery ?? brand?.deliveryPolicy ?? "-"}
 - Texniki göstəricilər: ${specs.map((s) => `${s.name}: ${s.value}`).join("; ") || "-"}
 ${brand?.businessName ? `- Mağaza: ${brand.businessName} (${brand.slogan ?? ""})` : ""}
-${opts.tone ? `- Ton: ${opts.tone}` : ""}
+${tone ? `- Ton: ${tone}` : ""}
 ${opts.extraInstructions ? `- Əlavə təlimat: ${opts.extraInstructions}` : ""}
+${profile ? buildProfileRules(profile) : ""}
+${profile ? buildExamplesBlock(profile) : ""}
 
 Vacib qaydalar:
 - Məhsul haqqında yanlış iddia yazma, yalnız verilən məlumatdan istifadə et.
-- Platformanın üslubuna uyğun yaz (marketplace üçün faktiki və səliqəli, Instagram üçün canlı və emojili).
+- Platformanın üslubuna uyğun yaz (marketplace üçün faktiki və səliqəli, sosial media üçün canlı).
 - YALNIZ aşağıdakı JSON formatında cavab ver, başqa heç nə yazma:
 {"title": "...", "body": "...", "hashtags": ["..."], "seoKeywords": ["..."]}`;
 
@@ -268,17 +415,20 @@ Vacib qaydalar:
   if (!jsonMatch) throw new Error("AI cavabında JSON tapılmadı");
   const parsed = JSON.parse(jsonMatch[0]) as Partial<GeneratedContent>;
   if (!parsed.title || !parsed.body) throw new Error("AI cavabı natamamdır");
-  return {
+  const result: GeneratedContent = {
     title: parsed.title,
     body: parsed.body,
     hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
     seoKeywords: Array.isArray(parsed.seoKeywords) ? parsed.seoKeywords : [],
   };
+  // AI nəticəsinə də sərt limitlər tətbiq olunur — qaydalar zəmanətli işləsin
+  return profile ? applyProfile(result, profile) : result;
 }
 
 /**
  * Platforma üçün kontent yaradır. AI Gateway açarı varsa real AI istifadə olunur,
  * yoxdursa və ya AI xəta versə deterministik şablon generatoru işləyir.
+ * Profil verildikdə qaydalar (limitlər, emoji, CTA, nümunələr) hər iki yolda tətbiq olunur.
  */
 export async function generatePlatformContent(opts: GenerateOptions): Promise<GeneratedContent> {
   if (aiAvailable()) {
@@ -298,24 +448,36 @@ export interface QualityResult {
   issues: string[];
 }
 
-export function qualityCheck(content: GeneratedContent, product: Product, platform: PlatformKey): QualityResult {
+export function qualityCheck(
+  content: GeneratedContent,
+  product: Product,
+  platform: string,
+  profile?: Platform | null
+): QualityResult {
   const issues: string[] = [];
   let score = 100;
+
+  const isMarketplace = platform === "tap-az" || platform === "birmarket" || platform === "umico";
+  const titleMax = profile?.titleMaxLen ?? (isMarketplace ? 90 : 120);
+  const bodyMin = profile?.bodyMinLen ?? 60;
+  const bodyMax = profile?.bodyMaxLen ?? (platform.startsWith("instagram") ? 2200 : 5000);
+  const hashtagMin =
+    profile?.hashtagMin ?? (platform.startsWith("instagram") && platform !== "instagram-story" ? 1 : 0);
 
   if (content.title.trim().length < 15) {
     issues.push("Başlıq çox qısadır — daha təsvirli başlıq yazın");
     score -= 15;
   }
-  if (content.title.trim().length > 90 && (platform === "tap-az" || platform === "birmarket" || platform === "umico")) {
-    issues.push("Başlıq marketplace üçün çox uzundur");
+  if (content.title.trim().length > titleMax) {
+    issues.push(`Başlıq limit aşır (maksimum ${titleMax} simvol)`);
     score -= 10;
   }
-  if (content.body.trim().length < 60) {
+  if (content.body.trim().length < bodyMin) {
     issues.push("Mətn çox qısadır — alıcı üçün kifayət qədər məlumat yoxdur");
     score -= 20;
   }
-  if (content.body.trim().length > 2200 && platform.startsWith("instagram")) {
-    issues.push("Mətn Instagram limiti (2200 simvol) üçün çox uzundur");
+  if (content.body.trim().length > bodyMax) {
+    issues.push(`Mətn platforma limiti (${bodyMax} simvol) üçün çox uzundur`);
     score -= 15;
   }
   if (product.price == null && product.salePrice == null) {
@@ -326,17 +488,23 @@ export function qualityCheck(content: GeneratedContent, product: Product, platfo
     issues.push("Zəmanət məlumatı qeyd olunmayıb");
     score -= 5;
   }
-  if (platform.startsWith("instagram") && content.hashtags.length === 0 && platform !== "instagram-story") {
+  if (hashtagMin > 0 && content.hashtags.length < hashtagMin) {
     issues.push("Hashtag əlavə olunmayıb");
     score -= 5;
   }
-  const images = (() => {
-    try {
-      return product.images ? (JSON.parse(product.images) as string[]) : [];
-    } catch {
-      return [];
+
+  // Profilin qadağan etdiyi sözlər
+  const forbidden = safeParse<string[]>(profile?.forbiddenWords, []);
+  if (forbidden.length) {
+    const haystack = `${content.title} ${content.body}`.toLowerCase();
+    const found = forbidden.filter((w) => w.trim() && haystack.includes(w.trim().toLowerCase()));
+    if (found.length) {
+      issues.push(`Qadağan olunmuş söz işlənib: ${found.join(", ")}`);
+      score -= Math.min(20, found.length * 10);
     }
-  })();
+  }
+
+  const images = safeParse<string[]>(product.images, []);
   if (images.length === 0) {
     issues.push("Məhsulun şəkli yüklənməyib");
     score -= 10;

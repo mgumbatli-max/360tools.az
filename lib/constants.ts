@@ -117,10 +117,49 @@ export const TONES = {
   standart: { label: "Standart" },
   premium: { label: "Premium" },
   genc: { label: "Gənc auditoriya" },
+  resmi: { label: "Rəsmi" },
 } as const;
 
 export type ToneKey = keyof typeof TONES;
 export const TONE_KEYS = Object.keys(TONES) as ToneKey[];
+
+export const PLATFORM_GROUPS = {
+  marketplace: { label: "Marketplace" },
+  social: { label: "Sosial media" },
+  web: { label: "Veb" },
+  messaging: { label: "Mesajlaşma" },
+  custom: { label: "Xüsusi platforma" },
+} as const;
+
+export type PlatformGroupKey = keyof typeof PLATFORM_GROUPS;
+
+export const EMOJI_LEVELS = {
+  none: { label: "Emoji işlənməsin" },
+  light: { label: "Az emoji" },
+  rich: { label: "Bol emoji" },
+} as const;
+
+export type EmojiLevelKey = keyof typeof EMOJI_LEVELS;
+
+// Kontent strukturunun blokları — platforma profili sırasını və aktivliyini idarə edir
+export const STRUCTURE_BLOCKS = {
+  opener: { label: "Giriş cümləsi" },
+  specs: { label: "Texniki göstəricilər" },
+  price: { label: "Qiymət" },
+  warranty: { label: "Zəmanət" },
+  delivery: { label: "Çatdırılma" },
+  cta: { label: "Çağırış (CTA)" },
+} as const;
+
+export type StructureBlockKey = keyof typeof STRUCTURE_BLOCKS;
+export const DEFAULT_STRUCTURE: StructureBlockKey[] = [
+  "opener",
+  "specs",
+  "price",
+  "warranty",
+  "delivery",
+  "cta",
+];
 
 export const IMAGE_FORMATS = {
   "1:1": { label: "Kvadrat (1:1)", width: 1080, height: 1080, usage: "Instagram post, marketplace" },

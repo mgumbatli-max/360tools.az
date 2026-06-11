@@ -5,13 +5,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, brandKit, contents, activities } from "@/lib/db/schema";
 import { generatePlatformContent, qualityCheck } from "@/lib/ai/generate";
-import type { PlatformKey, LanguageKey } from "@/lib/constants";
+import type { PlatformKey, LanguageKey, ToneKey } from "@/lib/constants";
 
 export interface QuickGenerateInput {
   productId: number;
   platform: PlatformKey;
   language: LanguageKey;
-  tone: "standart" | "premium" | "genc";
+  tone: ToneKey;
   extraInstructions?: string;
 }
 
