@@ -1,4 +1,5 @@
-import { generateText } from "ai";
+import { generateText, type LanguageModel } from "ai";
+import { createXai } from "@ai-sdk/xai";
 import type { Product, BrandKit, Platform } from "@/lib/db/schema";
 import {
   PLATFORMS,
@@ -9,11 +10,27 @@ import {
   formatPrice,
 } from "@/lib/constants";
 
-// AI Gateway açarı varsa real model, yoxdursa deterministik şablon generatoru işləyir.
+// AI açarı varsa real model, yoxdursa deterministik şablon generatoru işləyir.
+// Üstünlük: xAI (Grok) → Vercel AI Gateway (Claude).
 export const AI_MODEL = "anthropic/claude-sonnet-4-6";
+const XAI_MODEL = process.env.XAI_MODEL || "grok-3";
 
 export function aiAvailable(): boolean {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+  return Boolean(
+    process.env.XAI_API_KEY ||
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_OIDC_TOKEN
+  );
+}
+
+/** Mövcud açara görə düzgün AI modelini qaytarır (Grok və ya Gateway). */
+export function getAiModel(): LanguageModel {
+  if (process.env.XAI_API_KEY) {
+    const xai = createXai({ apiKey: process.env.XAI_API_KEY });
+    return xai(XAI_MODEL);
+  }
+  // Gateway: "provider/model" sətri AI_GATEWAY_API_KEY ilə işləyir
+  return AI_MODEL;
 }
 
 export interface GeneratedContent {
@@ -410,7 +427,7 @@ Vacib qaydalar:
 - YALNIZ aşağıdakı JSON formatında cavab ver, başqa heç nə yazma:
 {"title": "...", "body": "...", "hashtags": ["..."], "seoKeywords": ["..."]}`;
 
-  const { text } = await generateText({ model: AI_MODEL, prompt });
+  const { text } = await generateText({ model: getAiModel(), prompt });
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI cavabında JSON tapılmadı");
   const parsed = JSON.parse(jsonMatch[0]) as Partial<GeneratedContent>;

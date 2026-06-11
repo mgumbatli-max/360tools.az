@@ -3,7 +3,7 @@ import { generateText, type ModelMessage } from "ai";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, brandKit, type Product, type BrandKit } from "@/lib/db/schema";
-import { aiAvailable, generatePlatformContent, AI_MODEL } from "@/lib/ai/generate";
+import { aiAvailable, generatePlatformContent, getAiModel } from "@/lib/ai/generate";
 import { PLATFORMS, formatPrice, type PlatformKey, type LanguageKey } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -218,7 +218,7 @@ export async function POST(req: Request) {
             : { role: "assistant", content: m.content }
         );
 
-        const { text } = await generateText({ model: AI_MODEL, system, messages: modelMessages });
+        const { text } = await generateText({ model: getAiModel(), system, messages: modelMessages });
         if (text.trim()) {
           return NextResponse.json({ reply: text });
         }

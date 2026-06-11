@@ -6,7 +6,7 @@ import { generateText } from "ai";
 import { db } from "@/lib/db";
 import { campaigns, type Campaign } from "@/lib/db/schema";
 import { CAMPAIGN_TYPES, formatDate, type CampaignTypeKey } from "@/lib/constants";
-import { aiAvailable, AI_MODEL } from "@/lib/ai/generate";
+import { aiAvailable, getAiModel } from "@/lib/ai/generate";
 
 export interface ActionResult {
   ok: boolean;
@@ -155,7 +155,7 @@ export async function generateIdeas(id: number): Promise<ActionResult> {
   if (aiAvailable()) {
     try {
       const { text } = await generateText({
-        model: AI_MODEL,
+        model: getAiModel(),
         prompt: buildIdeasPrompt(campaign, typeKey),
       });
       const match = text.match(/\[[\s\S]*\]/);
