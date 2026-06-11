@@ -4,7 +4,10 @@ import path from "path";
 import * as schema from "./schema";
 import { runSeed, seedPlatforms } from "./seed";
 
-const DB_PATH = path.join(process.cwd(), "data", "360tools.db");
+// Vercel serverless-də yalnız /tmp yazılabilirdir (data hər soyuq başlanğıcda yenidən seed olunur).
+// Lokal/uzunömürlü serverdə isə layihə qovluğundakı data/ istifadə olunur (data qalıcıdır).
+const DB_DIR = process.env.VERCEL ? path.join("/tmp", "360tools-data") : path.join(process.cwd(), "data");
+const DB_PATH = path.join(DB_DIR, "360tools.db");
 
 const BOOTSTRAP_SQL = `
 CREATE TABLE IF NOT EXISTS products (
