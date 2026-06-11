@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { LANGUAGES, type LanguageKey } from "@/lib/constants";
 import { createAndGenerate, type WizardResult } from "@/lib/actions/wizard";
+import { uploadStandaloneImage } from "@/lib/actions/images";
 import type { PlatformOption } from "@/lib/platforms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export function CreateWizard({ platforms }: { platforms: PlatformOption[] }) {
   const [note, setNote] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [imageDraft, setImageDraft] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<string[]>(
     platforms.filter((p) => POPULAR.includes(p.key)).map((p) => p.key)
   );
@@ -54,6 +56,29 @@ export function CreateWizard({ platforms }: { platforms: PlatformOption[] }) {
     if (!t) return;
     setImages((prev) => [...prev, t]);
     setImageDraft("");
+  }
+
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await uploadStandaloneImage(fd);
+        if (res.ok && res.url) {
+          setImages((prev) => [...prev, res.url!]);
+        } else {
+          toast.error(res.error ?? "Şəkil yüklənmədi");
+        }
+      }
+    } catch {
+      toast.error("Şəkil yükləmə zamanı xəta baş verdi");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function toggle(key: string) {
@@ -210,6 +235,31 @@ export function CreateWizard({ platforms }: { platforms: PlatformOption[] }) {
               <p className="mt-1 text-sm text-muted-foreground">
                 İstəyə bağlıdır — şəkil linkini yapışdır. Sonra da əlavə edə bilərsən.
               </p>
+            </div>
+            {/* Kompüterdən yüklə */}
+            <label
+              className={cn(
+                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-muted/30 px-6 py-8 text-center transition hover:border-primary/40 hover:bg-muted/50",
+                uploading && "pointer-events-none opacity-60"
+              )}
+            >
+              {uploading ? (
+                <Loader2 className="size-7 animate-spin text-primary" />
+              ) : (
+                <ImagePlus className="size-7 text-muted-foreground" />
+              )}
+              <span className="text-sm font-medium text-foreground">
+                {uploading ? "Yüklənir…" : "Kompüterdən şəkil seç"}
+              </span>
+              <span className="text-xs text-muted-foreground">JPG, PNG, WEBP — maks 8 MB</span>
+              <input type="file" accept="image/*" multiple className="hidden" onChange={onUpload} disabled={uploading} />
+            </label>
+
+            {/* və ya link */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">və ya link yapışdır</span>
+              <div className="h-px flex-1 bg-border" />
             </div>
             <div className="flex gap-2">
               <Input

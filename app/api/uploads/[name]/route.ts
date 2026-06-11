@@ -4,7 +4,10 @@ import { readFile } from "fs/promises";
 
 // Runtime-da yüklənən şəkillər data/uploads qovluğunda saxlanılır (public/ deyil),
 // çünki public/-a build-dən sonra əlavə olunan fayllar production-da servis olunmur.
-const UPLOADS_DIR = path.join(process.cwd(), "data", "uploads");
+// Vercel-də data/ read-only-dur — /tmp istifadə olunur.
+const UPLOADS_DIR = process.env.VERCEL
+  ? path.join("/tmp", "360tools-data", "uploads")
+  : path.join(process.cwd(), "data", "uploads");
 
 const MIME_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",

@@ -118,8 +118,10 @@ export async function uploadImage(formData: FormData): Promise<ActionResult> {
   const fileName = `${Date.now()}-${sanitized}`;
 
   // public/ qovluğuna runtime-da yazılan fayllar production-da servis olunmur —
-  // data/uploads-da saxlanılır və /api/uploads/[name] route-u ilə verilir.
-  const uploadsDir = path.join(process.cwd(), "data", "uploads");
+  // data/uploads-da (Vercel-də /tmp) saxlanılır və /api/uploads/[name] route-u ilə verilir.
+  const uploadsDir = process.env.VERCEL
+    ? path.join("/tmp", "360tools-data", "uploads")
+    : path.join(process.cwd(), "data", "uploads");
   await mkdir(uploadsDir, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(uploadsDir, fileName), buffer);
@@ -132,6 +134,42 @@ export async function uploadImage(formData: FormData): Promise<ActionResult> {
   logActivity("məhsula şəkil yüklədi", product.name);
   revalidateImagePaths();
   return { ok: true };
+}
+
+/**
+ * Müstəqil şəkil yükləməsi — heç bir məhsula bağlanmadan faylı saxlayır və URL qaytarır.
+ * Sehrbaz kimi məhsul hələ yaradılmamış hallarda istifadə olunur.
+ */
+export async function uploadStandaloneImage(
+  formData: FormData
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Fayl seçilməyib" };
+  }
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, error: "Yalnız şəkil faylları yüklənə bilər" };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return { ok: false, error: "Fayl ölçüsü 8 MB-dan böyük ola bilməz" };
+  }
+
+  const sanitized =
+    file.name
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^[-.]+|[-.]+$/g, "") || "sekil.jpg";
+  const fileName = `${Date.now()}-${sanitized}`;
+
+  // Vercel-də data/ read-only-dur — /tmp istifadə olunur (api/uploads route-u ilə eyni).
+  const uploadsDir = process.env.VERCEL
+    ? path.join("/tmp", "360tools-data", "uploads")
+    : path.join(process.cwd(), "data", "uploads");
+  await mkdir(uploadsDir, { recursive: true });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(uploadsDir, fileName), buffer);
+
+  return { ok: true, url: `/api/uploads/${fileName}` };
 }
 
 export async function removeImage(
