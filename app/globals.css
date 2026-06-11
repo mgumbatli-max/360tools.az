@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,15 +48,15 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --shadow-soft: 0 1px 2px 0 oklch(0.21 0.03 277 / 0.04), 0 2px 8px -2px oklch(0.21 0.03 277 / 0.06);
-  --shadow-card: 0 1px 3px 0 oklch(0.21 0.03 277 / 0.05), 0 6px 16px -6px oklch(0.21 0.03 277 / 0.08);
-  --shadow-lift: 0 2px 4px 0 oklch(0.21 0.03 277 / 0.06), 0 12px 28px -8px oklch(0.21 0.03 277 / 0.12);
+  --shadow-soft: 0 1px 2px 0 oklch(0.21 0.04 277 / 0.05), 0 4px 12px -2px oklch(0.21 0.04 277 / 0.09);
+  --shadow-card: 0 2px 4px 0 oklch(0.21 0.04 277 / 0.06), 0 10px 24px -6px oklch(0.21 0.04 277 / 0.12);
+  --shadow-lift: 0 4px 8px 0 oklch(0.21 0.04 277 / 0.08), 0 18px 40px -10px oklch(0.21 0.04 277 / 0.16);
 }
 
 :root {
-  /* İsti-neytral, gözə yumşaq fon; ağ kartlar fonun üstündə "qalxır" */
-  --background: oklch(0.985 0.0025 280);
-  --foreground: oklch(0.21 0.025 280);
+  /* Sərin-neytral, kartların aydın seçildiyi fon */
+  --background: oklch(0.968 0.004 280);
+  --foreground: oklch(0.19 0.028 280);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.025 280);
   --popover: oklch(1 0 0);
@@ -143,7 +143,8 @@
   }
   /* Tipoqrafiya iyerarxiyası — başlıqlar daha sıx letter-spacing ilə */
   h1, h2, h3 {
-    letter-spacing: -0.014em;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
   }
 }
 
