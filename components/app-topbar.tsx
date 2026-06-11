@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarBrand, SidebarNav } from "@/components/app-sidebar";
-import { findNavLabel } from "@/components/nav-items";
+import { findNavItem } from "@/components/nav-items";
 
 export function AppTopbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const title = findNavLabel(pathname);
+  const navItem = findNavItem(pathname);
+  const title = navItem?.label ?? "360tools";
+  const Icon = navItem?.icon;
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
@@ -33,9 +35,16 @@ export function AppTopbar() {
         </SheetContent>
       </Sheet>
 
-      <h1 className="text-[15px] font-semibold tracking-tight text-foreground lg:text-base">
-        {title}
-      </h1>
+      <div className="flex items-center gap-2.5">
+        {Icon && (
+          <div className="hidden size-8 items-center justify-center rounded-lg bg-accent text-accent-foreground sm:flex">
+            <Icon className="size-[18px]" />
+          </div>
+        )}
+        <h1 className="text-[15px] font-semibold tracking-tight text-foreground lg:text-base">
+          {title}
+        </h1>
+      </div>
 
       <div className="ml-auto flex items-center gap-2">
         <Link

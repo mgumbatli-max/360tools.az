@@ -54,16 +54,16 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Pathname-ə görə cari bölmənin adını tapır (üst panel başlığı üçün). */
-export function findNavLabel(pathname: string): string {
-  let best: { label: string; len: number } | null = null;
+/** Pathname-ə görə cari bölmənin elementini (ad + ikon) tapır (üst panel başlığı üçün). */
+export function findNavItem(pathname: string): NavItem | null {
+  let best: { item: NavItem; len: number } | null = null;
   for (const group of NAV_GROUPS) {
     for (const item of group.items) {
       const match = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
       if (match && (!best || item.href.length > best.len)) {
-        best = { label: item.label, len: item.href.length };
+        best = { item, len: item.href.length };
       }
     }
   }
-  return best?.label ?? "360tools";
+  return best?.item ?? null;
 }
