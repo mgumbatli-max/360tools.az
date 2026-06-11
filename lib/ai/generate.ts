@@ -1,5 +1,6 @@
 import { generateText, type LanguageModel } from "ai";
 import { createXai } from "@ai-sdk/xai";
+import { createGroq } from "@ai-sdk/groq";
 import type { Product, BrandKit, Platform } from "@/lib/db/schema";
 import {
   PLATFORMS,
@@ -11,20 +12,26 @@ import {
 } from "@/lib/constants";
 
 // AI açarı varsa real model, yoxdursa deterministik şablon generatoru işləyir.
-// Üstünlük: xAI (Grok) → Vercel AI Gateway (Claude).
+// Üstünlük: Groq → xAI (Grok) → Vercel AI Gateway (Claude).
 export const AI_MODEL = "anthropic/claude-sonnet-4-6";
 const XAI_MODEL = process.env.XAI_MODEL || "grok-3";
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 export function aiAvailable(): boolean {
   return Boolean(
-    process.env.XAI_API_KEY ||
+    process.env.GROQ_API_KEY ||
+      process.env.XAI_API_KEY ||
       process.env.AI_GATEWAY_API_KEY ||
       process.env.VERCEL_OIDC_TOKEN
   );
 }
 
-/** Mövcud açara görə düzgün AI modelini qaytarır (Grok və ya Gateway). */
+/** Mövcud açara görə düzgün AI modelini qaytarır (Groq → Grok → Gateway). */
 export function getAiModel(): LanguageModel {
+  if (process.env.GROQ_API_KEY) {
+    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+    return groq(GROQ_MODEL);
+  }
   if (process.env.XAI_API_KEY) {
     const xai = createXai({ apiKey: process.env.XAI_API_KEY });
     return xai(XAI_MODEL);
