@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard,
+  Home,
   Package,
   Sparkles,
   Megaphone,
@@ -17,6 +17,7 @@ export interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
 }
 
 export interface NavGroup {
@@ -28,29 +29,27 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Əsas",
     items: [
-      { href: "/", label: "İdarə paneli", icon: LayoutDashboard },
+      { href: "/", label: "Ana səhifə", icon: Home },
+      { href: "/yarat", label: "Kontent yarat", icon: Sparkles, highlight: true },
       { href: "/mehsullar", label: "Məhsullar", icon: Package },
-      { href: "/ai-studio", label: "AI Studio", icon: Sparkles },
-      { href: "/elanlar", label: "Elanlar", icon: Megaphone },
-      { href: "/sekiller", label: "Şəkillər", icon: ImageIcon },
+      { href: "/elanlar", label: "Hazır kontentlər", icon: Megaphone },
     ],
   },
   {
-    label: "Planlama",
-    items: [
-      { href: "/sablonlar", label: "Şablonlar", icon: LayoutTemplate },
-      { href: "/teqvim", label: "Kontent təqvimi", icon: CalendarDays },
-      { href: "/kampaniyalar", label: "Kampaniyalar", icon: Rocket },
-    ],
-  },
-  {
-    label: "İdarəetmə",
+    label: "Ətraflı",
     items: [
       { href: "/platformalar", label: "Platformalar", icon: Plug },
+      { href: "/sekiller", label: "Şəkillər", icon: ImageIcon },
+      { href: "/sablonlar", label: "Şablonlar", icon: LayoutTemplate },
+      { href: "/teqvim", label: "Təqvim", icon: CalendarDays },
+      { href: "/kampaniyalar", label: "Kampaniyalar", icon: Rocket },
       { href: "/komanda", label: "Komanda", icon: Users },
       { href: "/analitika", label: "Analitika", icon: BarChart3 },
-      { href: "/ayarlar", label: "Ayarlar", icon: Settings },
     ],
+  },
+  {
+    label: "",
+    items: [{ href: "/ayarlar", label: "Ayarlar", icon: Settings }],
   },
 ];
 

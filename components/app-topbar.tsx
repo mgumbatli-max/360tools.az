@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Plus, Search } from "lucide-react";
+import { Menu, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -47,16 +47,9 @@ export function AppTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Link
-          href="/ai-studio"
-          className="hidden items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground shadow-soft transition hover:text-foreground sm:flex"
-        >
-          <Search className="size-4" />
-          <span>AI Studio-da axtar…</span>
-        </Link>
-        <Button render={<Link href="/mehsullar/yeni" />} className="gap-1.5">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">Yeni məhsul</span>
+        <Button render={<Link href="/yarat" />} className="gap-1.5">
+          <Sparkles className="size-4" />
+          <span className="hidden sm:inline">Kontent yarat</span>
         </Button>
         <Avatar className="size-9 border border-border">
           <AvatarFallback className="bg-brand-gradient text-xs font-semibold text-white">

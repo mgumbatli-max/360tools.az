@@ -11,15 +11,37 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5 scrollbar-slim">
-      {NAV_GROUPS.map((group) => (
-        <div key={group.label}>
-          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-            {group.label}
-          </div>
+      {NAV_GROUPS.map((group, gi) => (
+        <div key={group.label || `group-${gi}`}>
+          {group.label && (
+            <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+              {group.label}
+            </div>
+          )}
           <ul className="space-y-0.5">
             {group.items.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
+              // Əsas çağırış düyməsi — qradiyentli, fərqlənən
+              if (item.highlight) {
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white shadow-soft transition-all duration-150 bg-brand-gradient",
+                        active ? "ring-2 ring-primary/30" : "hover:opacity-90"
+                      )}
+                    >
+                      <item.icon className="size-[18px] shrink-0" />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              }
+
               return (
                 <li key={item.href}>
                   <Link
